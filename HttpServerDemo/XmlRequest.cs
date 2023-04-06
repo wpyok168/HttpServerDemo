@@ -8,6 +8,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Caching;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -16,7 +17,7 @@ namespace GetCIDbyBatchActivation
 {
     public class XmlRequest
     {
-        public static void MSXmlRequest(int typeid, string iid, string pid)
+        public static string MSXmlRequest(int typeid, string iid, string pid)
         {
             XDocument xd = CreateXml(typeid, iid, pid);
             XDocument resulttxd = CreateWebRequest(xd);
@@ -25,11 +26,11 @@ namespace GetCIDbyBatchActivation
             XElement xe = resulttxd.Descendants(xn2+ "ResponseXml").FirstOrDefault();
             XDocument xd1 = XDocument.Parse(xe.Value);
 
-            XNamespace xn = "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0";
-            XElement xe1 = xd1.Descendants(xn+ "CID").FirstOrDefault();
-            XElement errr = xd1.Descendants(xn + "ErrorCode").FirstOrDefault();
+            //XNamespace xn = "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0";
+            //XElement xe1 = xd1.Descendants(xn+ "CID").FirstOrDefault();
+            //XElement errr = xd1.Descendants(xn + "ErrorCode").FirstOrDefault();
 
-            XElement xe2 = xd1.Root.Element(xn+ "Responses").Element(xn + "Response").Element(xn + "CID");
+            //XElement xe2 = xd1.Root.Element(xn+ "Responses").Element(xn + "Response").Element(xn + "CID");
 
             XmlNamespaceManager xnm = new XmlNamespaceManager(new NameTable());
             xnm.AddNamespace("ar", "http://www.microsoft.com/DRM/SL/BatchActivationResponse/1.0");
@@ -37,6 +38,33 @@ namespace GetCIDbyBatchActivation
             XElement err = xd1.XPathSelectElement("//ar:ErrorCode", xnm);
             //string errstr = err.Value;
             //错误代码 0x7F:Exceeded; 0x67:; 0xD5:Blocked; 0x68:Invalidkey; 0x86:InvalidType; 0x90:IIDError; 0x71:NeverObtained;
+            if (xe3!=null)
+            {
+                return xe3.Value.ToString();   
+            }
+            if (err!=null)
+            {
+                string errcode=err.Value.ToString();
+                switch (errcode)
+                {
+                    case "0x7F":
+                        return "Exceeded";
+                    case "0x67":
+                    case "0xD5":
+                        return "Blocked";
+                    case "0x68":
+                        return "Invalidkey";
+                    case "0x86":
+                        return "InvalidType";
+                    case "0x90":
+                        return "IIDError";
+                    case "0x71":
+                        return "NeverObtained";
+                    default:
+                        break;
+                }
+            }
+            return string.Empty;
         }
         private static XDocument CreateXml(int typeid, string iid, string pid)
         {

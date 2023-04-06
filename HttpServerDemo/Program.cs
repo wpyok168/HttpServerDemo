@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.Remoting.Contexts;
+using GetCIDbyBatchActivation;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace HttpServerDemo
 {
@@ -54,14 +57,32 @@ namespace HttpServerDemo
         {
             if (request.HttpMethod=="GET")
             {
-                ResponseProcessing(response);
+                if (request.Url.ToString().Contains("getcid/?iids="))
+                {
+                    string cid = string.Empty;
+                    string str = System.Web.HttpUtility.UrlDecode(request.Url.PathAndQuery);
+                    string iid = Regex.Replace(str, "-","").Replace(" ", "").Replace("getcid/?iids=","");
+                    iid = Regex.Match(iid, "[\\d]+").Value;
+                    if (Regex.IsMatch(iid, "[\\d]{63}"))
+                    {
+                        iid= Regex.Match(iid, "[\\d]{63}").Value;
+                    }
+                    else if (Regex.IsMatch(iid, "[\\d]{54}"))
+                    {
+                        iid = Regex.Match(iid, "[\\d]{54}").Value;
+                    }
+                    //string iid = "690494024111248275641345743539870015978502549282339542426203524";
+                    cid=XmlRequest.MSXmlRequest(1, iid, "00000-04249-038-820384-03-2052-9200.0000-0902023");
+                    string outstr = $"安装ID：{iid}</br>确认ID：{cid}";
+                    IIDResponseProcessing(response, outstr);
+                }
             }
             else if (request.HttpMethod == "POST")
             {
                 //post 请求处理
-                string postData = new StreamReader(request.InputStream).ReadToEnd();
-                postData = System.Web.HttpUtility.UrlDecode(postData); //中文需要解码
-                Console.WriteLine("收到请求：" + postData);
+                //string postData = new StreamReader(request.InputStream).ReadToEnd();
+               // postData = System.Web.HttpUtility.UrlDecode(postData); //中文需要解码
+               // Console.WriteLine("收到请求：" + postData);
             }
             
             //响应处理
@@ -88,6 +109,22 @@ namespace HttpServerDemo
             {
                 sw.Write(responseBody);
             }
+            Console.WriteLine("响应结束");
+            return string.Empty;
+        }
+
+        private static string IIDResponseProcessing(HttpListenerResponse response,string cid)
+        {
+            string responseBody = cid;
+            response.ContentLength64 = System.Text.Encoding.UTF8.GetByteCount(responseBody);
+            response.ContentType = "text/html; Charset=UTF-8";
+            //输出响应内容
+            Stream output = response.OutputStream;
+            using (StreamWriter sw = new StreamWriter(output))
+            {
+                sw.Write(responseBody);
+            }
+            Console.WriteLine("响应数据"+ cid);
             Console.WriteLine("响应结束");
             return string.Empty;
         }
