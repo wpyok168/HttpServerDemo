@@ -30,17 +30,18 @@ namespace HttpServerDemo
                 sSocket.BeginGetContext(new AsyncCallback(GetContextCallBack), sSocket);
 
                 Console.WriteLine(context.Request.Url.PathAndQuery);
+                string a = System.Web.HttpUtility.HtmlEncode(context.Request.Url.Query);
 
                 //其它处理code
-                
+
                 //请求
-                
-                HttpListenerRequest request = context.Request;
-                RequestProcessing(request);
+                //HttpListenerRequest request = context.Request;
+                RequestProcessing(context.Request, context.Response);
+
 
                 //响应
-                HttpListenerResponse response = context.Response;
-                ResponseProcessing(response);
+                //HttpListenerResponse response = context.Response;
+                //ResponseProcessing(response);
             }
             catch (Exception err)
             {
@@ -48,14 +49,22 @@ namespace HttpServerDemo
             }
         }
 
-        //请求处理
+        //post 请求处理
         private static string RequestProcessing(HttpListenerRequest request, HttpListenerResponse response)
         {
-            string postData = new StreamReader(request.InputStream).ReadToEnd();
-            Console.WriteLine("收到请求：" + postData);
-
+            if (request.HttpMethod=="GET")
+            {
+                ResponseProcessing(response);
+            }
+            else if (request.HttpMethod == "POST")
+            {
+                //post 请求处理
+                string postData = new StreamReader(request.InputStream).ReadToEnd();
+                postData = System.Web.HttpUtility.UrlDecode(postData); //中文需要解码
+                Console.WriteLine("收到请求：" + postData);
+            }
+            
             //响应处理
-           
             ResponseProcessing(response);
             return string.Empty;
         }
@@ -70,7 +79,7 @@ namespace HttpServerDemo
         //相应处理
         private static string ResponseProcessing(HttpListenerResponse response)
         {
-            string responseBody = "<html><body><h1>test server</h1><form method=post action=/form><input type=text name=foo value=foovalue><input type=submit name=bar value=barvalue></form>";
+            string responseBody = "<html><body><h1>test server</h1><form method=post action=/form><input type=text name=foo value='好人一个'><input type=submit name=bar value=barvalue></form>";
             response.ContentLength64 = System.Text.Encoding.UTF8.GetByteCount(responseBody);
             response.ContentType = "text/html; Charset=UTF-8";
             //输出响应内容
